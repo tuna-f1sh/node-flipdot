@@ -1,0 +1,15 @@
+{
+  "name": "flipdot",
+  "version": "1.0.0",
+  "description": "RS485 driver for Hanover Flipdot Displays",
+  "main": "app.js",
+  "scripts": {
+    "test": "node examples/test.js"
+  },
+  "author": "John Whittington <node@jbrengineering.co.uk> (http://jbrengineering.co.uk)",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "binstring": "^0.2.1",
+    "serialport": "^5.0.0-beta7"
+  }
+}
