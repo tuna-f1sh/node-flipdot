@@ -67,7 +67,6 @@ function FlipDot(port, addr, rows, columns, callback) {
   this._queue = [];
   this._busy = false;
 
-  // console.log(this.packet);
 
   var flipdot = this;
 
@@ -148,11 +147,11 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
   return x;
 }
 
-FlipDot.prototype.writeText = function(text, font = 'Doom') {
+FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default', vLayout = 'default') {
   var aart = figlet.textSync(text, {
     font: font,
-    horizontalLayout: 'default',
-    verticalLayout: 'default'
+    horizontalLayout: hLayout,
+    verticalLayout: vLayout
   });
 
   console.log(aart);
@@ -162,7 +161,6 @@ FlipDot.prototype.writeText = function(text, font = 'Doom') {
 
   // get a matrix to fill TODO: length of string and que excess data
   mat = this.matrix();
-  console.log(mat);
   
   // fill matrix with on/off char/void
   aart.forEach(function(row,i) {
@@ -178,7 +176,7 @@ FlipDot.prototype.writeText = function(text, font = 'Doom') {
   data = this.encode(data);
 
   // set data to property for next send
-  this.data = data;
+  //this.packet.data = data;
 
   return data;
 }
@@ -253,21 +251,26 @@ FlipDot.prototype.__checksum__ = function(packet) {
 FlipDot.prototype.send = function(data, callback) {
 
   // check data length and que if longer than display/pad if less
-  if ( data.length > this.ldata ) {
-    this.packet.data = data.slice(0,this.ldata)
-    for (i = this.ldata; i <= data.length; i += this.ldata) {
-      this._queue.push(data.slice(i,i+this.ldata));
+  if (typeof data !== "undefined") {
+    // not longer
+    if ( data.length > this.ldata ) {
+      this.packet.data = data.slice(0,this.ldata)
+      for (i = this.ldata; i <= data.length; i += this.ldata) {
+        this._queue.push(data.slice(i,i+this.ldata));
+      }
+    // not shorter either append zeros if is
+    } else if ( data.length < this.ldata) {
+    // exists and right size, stick it in packet
+    } else {
+      this.packet.data = data;
     }
-  } else if ( data.length < this.ldata) {
-    // this.data = data.push
   }
   
   // stick data in the packet if passed otherwise use current data
-  if (typeof this._que !== "undefined") {
-    this.packet.data = this_que.pop();
-  } else {
-    if (typeof data !== "undefined") this.packet.data = data;
-  }
+  //if (typeof this._queue !== "undefined") {
+    //this.packet.data = this_queue.pop();
+  //}
+  console.log(this._queue.length);
 
   // calculate CRC
   var crc = this.__checksum__(this.packet);

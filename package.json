@@ -9,12 +9,7 @@
   "author": "John Whittington <node@jbrengineering.co.uk> (http://jbrengineering.co.uk)",
   "license": "GPL-3.0",
   "dependencies": {
-    "ascii-art": "^1.4.2",
-    "asciimo": "^0.3.1",
-    "binstring": "^0.2.1",
     "figlet": "^1.2.0",
-    "numjs": "^0.13.1",
-    "pad": "^1.1.0",
-    "serialport": "^5.0.0-beta7"
+    "serialport": "^5.0.0-beta8"
   }
 }

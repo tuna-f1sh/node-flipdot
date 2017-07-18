@@ -1,5 +1,5 @@
 var SerialPort = require('serialport');
-var port = new SerialPort('/dev/tty.wchusbserial1420', {
+var port = new SerialPort('/dev/ttyUSB0', {
   baudRate: 4800
 });
 
