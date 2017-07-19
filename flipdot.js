@@ -55,10 +55,13 @@ function FlipDot(port, addr, rows, columns, callback) {
   this.col_bytes = rows / 8; // number of bytes in each column
   this.ldata = (this.columns * this.col_bytes * 2);
   this.res = this.byteToAscii(this.data & 0xFF); // resolution in Hanover format for header
+  this.refresh = 1000;
+  this.reTask = null;
+
   // packet on display
   this.packet = {
     header : [this.hchar, 0x31, 0x35, this.res[0], this.res[1]],
-    data : [],
+    data : this.writeText('null'),
     footer : [this.fchar, 0x00, 0x00],
   };
 
@@ -67,6 +70,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   this._queue = [];
   this._busy = false;
 
+  this.error_msg = this.writeText('error');
 
   var flipdot = this;
 
@@ -120,7 +124,7 @@ FlipDot.prototype.write = function(data) {
 
 FlipDot.prototype.writeDrain = function(data, callback) {
   if (this.debug) console.log("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
-  this.serial.write(data, 'ascii', function () {
+  this.serial.write(data, function () {
     this.serial.drain(callback);
   }.bind(this));
 };
@@ -255,23 +259,23 @@ FlipDot.prototype.send = function(data, callback) {
     // not longer
     if ( data.length > this.ldata ) {
       this.packet.data = data.slice(0,this.ldata)
-      for (i = this.ldata; i <= data.length; i += this.ldata) {
-        this._queue.push(data.slice(i,i+this.ldata));
+      for (i = 2; i <= (data.length-this.ldata); i+=2) {
+        this._queue.push(data.slice(i,this.ldata+i));
       }
     // not shorter either append zeros if is
     } else if ( data.length < this.ldata) {
+      this.packet.data = data.concat(new Array(this.ldata - data.length).fill(0));
     // exists and right size, stick it in packet
     } else {
       this.packet.data = data;
     }
   }
-  
-  // stick data in the packet if passed otherwise use current data
-  //if (typeof this._queue !== "undefined") {
-    //this.packet.data = this_queue.pop();
-  //}
-  console.log(this._queue.length);
 
+  // finally assert the data before sending
+  if (typeof this.packet.data === 'undefined' || this.packet.data.length < this.ldata) {
+    this.packet.data = this.error_msg;
+  }
+  
   // calculate CRC
   var crc = this.__checksum__(this.packet);
   var footer = this.byteToAscii(crc);
@@ -290,7 +294,36 @@ FlipDot.prototype.send = function(data, callback) {
   this._buffer = Buffer.concat([head, msg, footer]);
 
   // write via serial
-  this.writeDrain(this._buffer, callback);
+  temp = Buffer.alloc(this.packet.header.length + this.ldata + this.packet.footer.length).fill(0x00);
+  this._buffer.copy(temp); // copy to avoid changes during write
+  // this.write(temp);
+  this.writeDrain(this._buffer, function () {
+  
+    // send complete, pop next data from queue and start task if queue exists
+    if (this._queue.length > 0) {
+      this.packet.data = this._queue.shift();
+      if (this.reTask === null) {
+        this._busy = true;
+        this.reTask = setInterval( function() {
+          if (this._queue.length > 0) {
+            this.send()
+          } else {
+            clearInterval(this.reTask);
+            this.reTask = null;
+            this._busy = false;
+          }
+        }.bind(this), this.refresh);
+      }
+    } else {
+      this.emit("free");
+    }
+
+    // run passed callback
+    if (typeof callback !== "undefined") {
+      callback();
+    }
+
+  }.bind(this));
 };
 
 /**
