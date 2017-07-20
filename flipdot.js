@@ -36,7 +36,7 @@ function FlipDot(port, addr, rows, columns, callback) {
     portSettings : {
       baudRate : 4800,
       autoOpen : true,
-      highWaterMark: 32768,
+      // highWaterMark: 32768,
     },
   };
 
@@ -61,16 +61,19 @@ function FlipDot(port, addr, rows, columns, callback) {
   // packet on display
   this.packet = {
     header : [this.hchar, 0x31, 0x35, this.res[0], this.res[1]],
-    data : this.writeText('null'),
+    data : [],
     footer : [this.fchar, 0x00, 0x00],
   };
+
+  // initialise the data buffer to text 'null'
+  this.writeText('null');
 
   // data stream sent to display
   this._buffer = Buffer.alloc(this.packet.header.length + this.ldata + this.packet.footer.length);
   this._queue = [];
   this._busy = false;
 
-  this.error_msg = this.writeText('error');
+  this.error_msg = this.writeText('error',undefined,undefined,undefined,false,false);
 
   var flipdot = this;
 
@@ -129,10 +132,10 @@ FlipDot.prototype.writeDrain = function(data, callback) {
   }.bind(this));
 };
 
-FlipDot.prototype.matrix = function(row = this.rows, col = this.columns) {
-  var x = new Array(row).fill(0);
+FlipDot.prototype.matrix = function(row = this.rows, col = this.columns, fill = 0x00) {
+  var x = new Array(row).fill(fill);
   for (var i = 0; i < row; i++) {
-    x[i] = new Array(col).fill(0);
+    x[i] = new Array(col).fill(fill);
   }
 
   return x;
@@ -141,17 +144,37 @@ FlipDot.prototype.matrix = function(row = this.rows, col = this.columns) {
 FlipDot.prototype.matrixToBytes = function(matrix) {
   var x = new Array(matrix[0].length * this.col_bytes).fill(0);
 
-  // TODO: Scale to include flipdots with more than 1 byte per column
+  // walk columns of bytes
   for (j = 0; j < x.length; j++) {
-    for (i = 0; i < 8; i++) {
-      x[j] += (matrix[i][j] & 0x01) << i;
+    // walk bytes in column
+    for (b = 0; b < this.col_bytes; b++) {
+      // walk bits in byte constructing hex value
+      for (i = 8*b; i < 8 * (b+1); i++) {
+        x[j] += (matrix[i][j] & 0x01) << i;
+      }
     }
   }
 
   return x;
 }
 
-FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default', vLayout = 'default') {
+FlipDot.prototype.writeMatrix = function(matrix) {
+  data = matrixToBytes(matrix)
+
+  return data;
+}
+
+FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
+  if (frames.length > 0)
+    this.load(frames[0]);
+    this.refresh = refresh; // set reTask time if passed
+
+    // then queue remaining frames
+    for (i = 1; i < frames.length; i++)
+      this.load(frames[i],true);
+}
+
+FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default', vLayout = 'default', invert = false, load = true) {
   var aart = figlet.textSync(text, {
     font: font,
     horizontalLayout: hLayout,
@@ -163,26 +186,34 @@ FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default
   // convert string to array at line breaks
   aart = aart.split('\n');
 
-  // get a matrix to fill TODO: length of string and que excess data
-  mat = this.matrix();
+  // get a matrix to fill 
+  mat = this.matrix(this.rows, this.columns, invert);
   
   // fill matrix with on/off char/void
   aart.forEach(function(row,i) {
     for (j = 0; j < row.length; j++) {
-      mat[i][j] = ( (row.charAt(j) === '') || (row.charAt(j) === ' ') ) ? 0 : 1;
+      mat[i][j] = ( (row.charAt(j) === '') || (row.charAt(j) === ' ') ) ? invert : !invert;
     }
   });
 
   // convert matrix to column hex array
   data = this.matrixToBytes(mat);
 
-  // encode it for Hanover display
-  data = this.encode(data);
-
   // set data to property for next send
-  //this.packet.data = data;
+  if (load) this.load(data);
 
   return data;
+}
+
+FlipDot.prototype.clear = function() {
+  this._stopQueue();
+
+  this.fill(0x00);
+}
+
+FlipDot.prototype.fill = function(value) {
+  x = new Array(this.columns).fill(value);
+  this.send(x);
 }
 
 FlipDot.prototype.byteToAscii = function(byte) {
@@ -210,11 +241,6 @@ FlipDot.prototype.byteToAscii = function(byte) {
 FlipDot.prototype.encode = function(matrix) {
   var data = [];
   var bytes = [];
-
-  // run through matrix, replacing chars with 0 or 1 for on/off
-  // TODO: look up string replace in node
-
-  // TODO: Use binstring to parse string based matrix into hex rows/bytes and create byte array
 
   matrix.forEach(function(byte) {
     data = data.concat(this.byteToAscii(byte));
@@ -252,28 +278,56 @@ FlipDot.prototype.__checksum__ = function(packet) {
   return crc;
 };
 
-FlipDot.prototype.send = function(data, callback) {
-
-  // check data length and que if longer than display/pad if less
-  if (typeof data !== "undefined") {
-    // not longer
-    if ( data.length > this.ldata ) {
-      this.packet.data = data.slice(0,this.ldata)
-      for (i = 2; i <= (data.length-this.ldata); i+=2) {
-        this._queue.push(data.slice(i,this.ldata+i));
-      }
-    // not shorter either append zeros if is
-    } else if ( data.length < this.ldata) {
-      this.packet.data = data.concat(new Array(this.ldata - data.length).fill(0));
-    // exists and right size, stick it in packet
-    } else {
-      this.packet.data = data;
-    }
+FlipDot.prototype._stopQueue = function() {
+  // stop the task if it's running
+  if (this.reTask !== null) {
+    clearInterval(this.reTask);
+    this.reTask = null;
+    this._busy = false;
   }
 
-  // finally assert the data before sending
+  // clear the queued data
+  this._queue = [];
+}
+
+FlipDot.prototype.load = function(data = 0x00, queue = false) {
+  // encode it for Hanover display
+  data = this.encode(data);
+
+  // prepare next frame to show variable
+  next = this.packet.data;
+
+  // check data length and que if longer than display/pad if less
+  if ( data.length > this.ldata ) {
+    next = data.slice(0,this.ldata)
+    for (i = (2 * this.col_bytes); i <= (data.length-this.ldata); i+=(2 * this.col_bytes)) {
+      this._queue.push(data.slice(i,this.ldata+i));
+    }
+  // not shorter either append zeros if is
+  } else if ( data.length < this.ldata) {
+    next = data.concat(new Array(this.ldata - data.length).fill(0));
+  // exists and right size, stick it in packet
+  } else {
+    next = data;
+  }
+
+  // queue the data if requested, otherwise load it for next send
+  if (queue) this._queue.push(next); else this.packet.data = next;
+
+}
+
+FlipDot.prototype.send = function(data, callback) {
+
+  // load some data if it has been passed
+  if (typeof data !== "undefined" && typeof data !== "function") {
+    this.load(data,false);
+  } else if (typeof data === "function" ) {
+    callback = data;
+  }
+
+  // assert the data is in packet before sending
   if (typeof this.packet.data === 'undefined' || this.packet.data.length < this.ldata) {
-    this.packet.data = this.error_msg;
+    this.load(this.error_msg);
   }
   
   // calculate CRC
@@ -317,6 +371,8 @@ FlipDot.prototype.send = function(data, callback) {
     } else {
       this.emit("free");
     }
+
+    this.emit("sent");
 
     // run passed callback
     if (typeof callback !== "undefined") {

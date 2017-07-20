@@ -11,6 +11,6 @@
   "dependencies": {
     "debug": "^2.6.8",
     "figlet": "^1.2.0",
-    "serialport": "^4.0.7"
+    "serialport": "^5.0.0-beta8"
   }
 }
