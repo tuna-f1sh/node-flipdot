@@ -75,7 +75,7 @@ function FlipDot(port, addr, rows, columns, callback) {
 
   this.error_msg = this.writeText('error',undefined,undefined,undefined,false,false);
 
-  var flipdot = this;
+  // var flipdot = this;
 
   this.serial = new SerialPort(port, defaults.portSettings, function(err) {
     if (err) {
@@ -145,11 +145,11 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
   var x = new Array(matrix[0].length * this.col_bytes).fill(0);
 
   // walk columns of bytes
-  for (j = 0; j < x.length; j++) {
+  for (var j = 0; j < x.length; j++) {
     // walk bytes in column
-    for (b = 0; b < this.col_bytes; b++) {
+    for (var b = 0; b < this.col_bytes; b++) {
       // walk bits in byte constructing hex value
-      for (i = 8*b; i < 8 * (b+1); i++) {
+      for (var i = 8*b; i < 8 * (b+1); i++) {
         x[j] += (matrix[i][j] & 0x01) << i;
       }
     }
@@ -159,7 +159,7 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
 }
 
 FlipDot.prototype.writeMatrix = function(matrix) {
-  data = matrixToBytes(matrix)
+  var data = this.matrixToBytes(matrix)
 
   return data;
 }
@@ -170,7 +170,7 @@ FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
     this.refresh = refresh; // set reTask time if passed
 
     // then queue remaining frames
-    for (i = 1; i < frames.length; i++)
+    for (var i = 1; i < frames.length; i++)
       this.load(frames[i],true);
 }
 
@@ -187,17 +187,17 @@ FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default
   aart = aart.split('\n');
 
   // get a matrix to fill 
-  mat = this.matrix(this.rows, this.columns, invert);
+  var mat = this.matrix(this.rows, this.columns, invert);
   
   // fill matrix with on/off char/void
   aart.forEach(function(row,i) {
-    for (j = 0; j < row.length; j++) {
+    for (var j = 0; j < row.length; j++) {
       mat[i][j] = ( (row.charAt(j) === '') || (row.charAt(j) === ' ') ) ? invert : !invert;
     }
   });
 
   // convert matrix to column hex array
-  data = this.matrixToBytes(mat);
+  var data = this.matrixToBytes(mat);
 
   // set data to property for next send
   if (load) this.load(data);
@@ -212,15 +212,15 @@ FlipDot.prototype.clear = function() {
 }
 
 FlipDot.prototype.fill = function(value) {
-  x = new Array(this.columns).fill(value);
+  var x = new Array(this.columns).fill(value);
   this.send(x);
 }
 
 FlipDot.prototype.byteToAscii = function(byte) {
   var asciichars = new Buffer(2);
 
-  b1 = 0;
-  b2 = 0;
+  var b1 = 0;
+  var b2 = 0;
   b1 = byte >> 4;
   if (b1 > 9)
       b1 += 0x37;
@@ -240,7 +240,6 @@ FlipDot.prototype.byteToAscii = function(byte) {
 
 FlipDot.prototype.encode = function(matrix) {
   var data = [];
-  var bytes = [];
 
   matrix.forEach(function(byte) {
     data = data.concat(this.byteToAscii(byte));
@@ -273,7 +272,7 @@ FlipDot.prototype.__checksum__ = function(packet) {
 
   // Checksum is the sum XOR 255 + 1. So, sum of all bytes + checksum
   // is equal to 0 (8 bits)
-  crc =  (sum ^ 255) + 1;
+  var crc =  (sum ^ 255) + 1;
 
   return crc;
 };
@@ -295,12 +294,12 @@ FlipDot.prototype.load = function(data = 0x00, queue = false) {
   data = this.encode(data);
 
   // prepare next frame to show variable
-  next = this.packet.data;
+  var next = this.packet.data;
 
   // check data length and que if longer than display/pad if less
   if ( data.length > this.ldata ) {
     next = data.slice(0,this.ldata)
-    for (i = (2 * this.col_bytes); i <= (data.length-this.ldata); i+=(2 * this.col_bytes)) {
+    for (var i = (2 * this.col_bytes); i <= (data.length-this.ldata); i+=(2 * this.col_bytes)) {
       this._queue.push(data.slice(i,this.ldata+i));
     }
   // not shorter either append zeros if is
@@ -339,16 +338,16 @@ FlipDot.prototype.send = function(data, callback) {
   this.packet.footer[2] = footer[1];
 
   // make into binary buffers for serialport
-  head = Buffer.from(this.packet.header);
-  msg = Buffer.from(this.packet.data);
-  footer = Buffer.from(this.packet.footer);
+  var head = Buffer.from(this.packet.header);
+  var msg = Buffer.from(this.packet.data);
+  var footer = Buffer.from(this.packet.footer);
 
   // update object and con concat the packet into one stream
   // this.packet = packet;
   this._buffer = Buffer.concat([head, msg, footer]);
 
   // write via serial
-  temp = Buffer.alloc(this.packet.header.length + this.ldata + this.packet.footer.length).fill(0x00);
+  var temp = Buffer.alloc(this.packet.header.length + this.ldata + this.packet.footer.length).fill(0x00);
   this._buffer.copy(temp); // copy to avoid changes during write
   // this.write(temp);
   this.writeDrain(this._buffer, function () {
