@@ -23,7 +23,7 @@ flippy.once("open", function() {
   var task = setInterval( function() {
     if (++x < frames.length) {
       flippy.writeText(frames[x],undefined,undefined,undefined,1);
-      flippy.send(() => {console.log('written');});
+      flippy.send();
     } else {
       clearInterval(task);
     }

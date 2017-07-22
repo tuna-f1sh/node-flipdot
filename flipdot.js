@@ -24,6 +24,8 @@ var SerialPort = require('serialport');
 
 // Modules
 var figlet = require('figlet');
+var debug = require('debug')('flipdot')
+var asciiDebug = require('debug')('ascii')
 
 function FlipDot(port, addr, rows, columns, callback) {
   if (typeof port === "function" || typeof port === "undefined") {
@@ -55,7 +57,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   this.col_bytes = rows / 8; // number of bytes in each column
   this.ldata = (this.columns * this.col_bytes * 2);
   this.res = this.byteToAscii(this.data & 0xFF); // resolution in Hanover format for header
-  this.refresh = 1000;
+  this.refresh = 500;
   this.reTask = null;
 
   // packet on display
@@ -86,7 +88,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   
   // Emit when port is open and ready to send data
   this.serial.on('open', function() {
-    if (this.debug) console.log('Serial port open @: ' + defaults.portSettings.baudRate);
+    console.log('FlipDot port open on ' + port + ' @: ' + defaults.portSettings.baudRate);
     this.serial.flush();
     this.emit("open");
   }.bind(this));
@@ -107,7 +109,7 @@ function FlipDot(port, addr, rows, columns, callback) {
     if (typeof callback === "function") {
       callback(error);
     } else {
-      if (this.debug) console.log('Error: ' + error);
+      debug(error);
       this.emit("error", error);
     }
   }.bind(this));
@@ -121,12 +123,12 @@ FlipDot.prototype = Object.create(Emitter.prototype, {
 });
 
 FlipDot.prototype.write = function(data) {
-  if (this.debug) console.log("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
+  debug("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
   this.serial.write(data);
 };
 
 FlipDot.prototype.writeDrain = function(data, callback) {
-  if (this.debug) console.log("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
+  debug("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
   this.serial.write(data, function () {
     this.serial.drain(callback);
   }.bind(this));
@@ -181,7 +183,7 @@ FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default
     verticalLayout: vLayout
   });
 
-  console.log(aart);
+  asciiDebug(aart);
 
   // convert string to array at line breaks
   aart = aart.split('\n');
@@ -245,7 +247,7 @@ FlipDot.prototype.encode = function(matrix) {
     data = data.concat(this.byteToAscii(byte));
   }.bind(this));
 
-  if (this.debug) console.log("Encoded Data: " + data);
+  debug("Encoded Data: " + data);
 
   return data;
 };
