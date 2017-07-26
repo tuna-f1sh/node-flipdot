@@ -1,13 +1,12 @@
 var FlipDot = require('../flipdot.js');
 var dateFormat = require('dateformat');
 
-var flippy = new FlipDot('/dev/tty.wchusbserial1420',5,7,56);
+var flippy = new FlipDot('/dev/ttyUSB0',5,7,56);
 
-function startClock(seconds = false) {
-  var format = "   HH:MM"
+function startClock(seconds = false, font = 'Banner', offset = [0,0], invert = false) {
+  var format = "HH:MM"
   if (seconds) {
     format = format.concat(":ss")
-    format = format.trim()
   }
   
   var lastString = [];
@@ -15,7 +14,7 @@ function startClock(seconds = false) {
     var now = new Date();
     var timeString = dateFormat(now,format);
     if (timeString != lastString) {
-      flippy.writeText(dateFormat(now, timeString))
+      flippy.writeText(timeString, {font: font}, offset, invert);
       flippy.send();
       lastString = timeString;
     }

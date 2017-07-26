@@ -22,7 +22,7 @@ flippy.once("open", function() {
   var x = -1;
   var task = setInterval( function() {
     if (++x < frames.length) {
-      flippy.writeText(frames[x],undefined,undefined,undefined,1);
+      flippy.writeText(frames[x]);
       flippy.send();
     } else {
       clearInterval(task);

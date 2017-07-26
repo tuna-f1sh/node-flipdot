@@ -75,7 +75,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   this._queue = [];
   this._busy = false;
 
-  this.error_msg = this.writeText('error',undefined,undefined,undefined,false,false);
+  this.error_msg = this.writeText('error',undefined,undefined,false,false);
 
   // var flipdot = this;
 
@@ -135,6 +135,9 @@ FlipDot.prototype.writeDrain = function(data, callback) {
 };
 
 FlipDot.prototype.matrix = function(row = this.rows, col = this.columns, fill = 0x00) {
+  if (row < this.rows) row = this.rows
+  if (col < this.columns) col = this.columns
+
   var x = new Array(row).fill(fill);
   for (var i = 0; i < row; i++) {
     x[i] = new Array(col).fill(fill);
@@ -176,12 +179,8 @@ FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
       this.load(frames[i],true);
 }
 
-FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default', vLayout = 'default', invert = false, load = true) {
-  var aart = figlet.textSync(text, {
-    font: font,
-    horizontalLayout: hLayout,
-    verticalLayout: vLayout
-  });
+FlipDot.prototype.writeText = function(text, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, load = true) {
+  var aart = figlet.textSync(text, fontOpt);
 
   asciiDebug(aart);
 
@@ -189,12 +188,12 @@ FlipDot.prototype.writeText = function(text, font = 'Banner', hLayout = 'default
   aart = aart.split('\n');
 
   // get a matrix to fill 
-  var mat = this.matrix(this.rows, this.columns, invert);
+  var mat = this.matrix(aart.length+offset[0], this.columns, invert);
   
   // fill matrix with on/off char/void
   aart.forEach(function(row,i) {
     for (var j = 0; j < row.length; j++) {
-      mat[i][j] = ( (row.charAt(j) === '') || (row.charAt(j) === ' ') ) ? invert : !invert;
+      mat[i+offset[0]][j+offset[1]] = ( (row.charAt(j) === '') || (row.charAt(j) === ' ') ) ? invert : !invert;
     }
   });
 

@@ -1,7 +1,12 @@
 {
-  "name": "flipdot",
+  "name": "flipdot-display",
   "version": "1.0.0",
   "description": "RS485 driver for Hanover Flipdot Displays",
+  "keywords" : [
+    "flipdot",
+    "hanover",
+    "rs485"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/tuna-f1sh/node-flipdot"
@@ -21,6 +26,7 @@
     "serialport": "^5.0.0-beta8"
   },
   "bin": {
-    "flipdot": "./bin/term.js"
+    "flipdot": "./bin/term.js",
+    "flipdot-clock": "./bin/clock.js"
   }
 }

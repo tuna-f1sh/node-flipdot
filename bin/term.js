@@ -7,9 +7,10 @@ args
   .option('columns', 'Number of columns on display', 56)
   .option('address', 'Address of display (sent in header)', 5)
   .option('string', 'The string to write', 'Hello World!!')
+  .option('xaxis', 'x offset', 0)
+  .option('yaxis', 'y offset', 0)
   .option('font', 'Figet font to use', 'Banner')
   .option('invert', 'Invert display', false)
-//   .command('write', 'Serve your static site', ['s'])
 
 const flags = args.parse(process.argv)
 
@@ -21,7 +22,7 @@ flippy.on("error", function(err) {
 
 flippy.once("open", function() {
   flippy.fill(0xFF);
-  flippy.writeText(flags.string, flags.font, undefined, undefined, flags.invert)
+  flippy.writeText(flags.string, {font: flags.font}, [flags.xaxis,flags.yaxis], flags.invert)
   console.log('Sending: ' + flags.string)
   flippy.send(() => {
     console.log("Writing...")
