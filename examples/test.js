@@ -1,15 +1,17 @@
 var FlipDot = require('../flipdot.js');
 
-const SerialPort = require('serialport/test');
-const MockBinding = SerialPort.Binding;
+// const SerialPort = require('serialport/test');
+// const MockBinding = SerialPort.Binding;
 
-MockBinding.createPort('/dev/ROBOT', { echo: true });
-var flippy = new FlipDot('/dev/ROBOT',5,7,56);
+// MockBinding.createPort('/dev/ROBOT', { echo: true });
+var flippy = new FlipDot('/dev/tty.wchusbserial1420',5,7,56);
 
 frames = [
-  "Hello",
-  "World",
-  "!!!!!",
+  "I think",
+  "they got",
+  "the front",
+  "and rear",
+  "mixed up!!!!!!!!"
 ];
 
 flippy.on("error", function(err) {

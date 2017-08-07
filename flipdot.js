@@ -57,6 +57,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   this.col_bytes = rows / 8; // number of bytes in each column
   this.ldata = (this.columns * this.col_bytes * 2);
   this.res = this.byteToAscii(this.data & 0xFF); // resolution in Hanover format for header
+  this.last_sent = [];
   this.refresh = 500;
   this.reTask = null;
 
@@ -163,20 +164,25 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
   return x;
 }
 
-FlipDot.prototype.writeMatrix = function(matrix) {
+FlipDot.prototype.writeMatrix = function(matrix, load = true) {
   var data = this.matrixToBytes(matrix)
+
+  // set data to property for next send
+  if (load) this.load(data);
 
   return data;
 }
 
 FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
-  if (frames.length > 0)
+  if (frames.length > 0) {
     this.load(frames[0]);
     this.refresh = refresh; // set reTask time if passed
 
     // then queue remaining frames
-    for (var i = 1; i < frames.length; i++)
+    for (var i = 1; i < frames.length; i++) {
       this.load(frames[i],true);
+    }
+  }
 }
 
 FlipDot.prototype.writeText = function(text, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, load = true) {
@@ -217,6 +223,15 @@ FlipDot.prototype.fill = function(value) {
   this.send(x);
 }
 
+FlipDot.prototype.asciiToByte = function(chars) {
+  var b1 = String.fromCharCode(chars[1]);
+  var b2 = String.fromCharCode(chars[0]);
+
+  b2 = b2.concat(b1);
+
+  return parseInt(b2,16);
+}
+
 FlipDot.prototype.byteToAscii = function(byte) {
   var asciichars = new Buffer(2);
 
@@ -242,16 +257,31 @@ FlipDot.prototype.byteToAscii = function(byte) {
 FlipDot.prototype.encode = function(matrix) {
   var data = [];
 
-  matrix.forEach(function(byte) {
-    data = data.concat(this.byteToAscii(byte));
-  }.bind(this));
+  // assert matrix
+  if (typeof(matrix) === "object") {
+    matrix.forEach(function(byte) {
+      data = data.concat(this.byteToAscii(byte));
+    }.bind(this));
 
-  debug("Encoded Data: " + data);
+    debug("Encoded Data: " + data);
+  } else {
+    this.emit("error", "Null data or invalid format");
+  }
 
   return data;
 };
 
-FlipDot.prototype.__checksum__ = function(packet) {
+FlipDot.prototype.decode = function(data = this.packet.data) {
+  var hex_data = [];
+
+  for (var i = 0; i < data.length; i += 2) {
+    hex_data.push( this.asciiToByte( [data[i], data[i+1]] ) );
+  }
+
+  return hex_data;
+};
+
+FlipDot.prototype.__checksum__ = function(packet = this.packet) {
   var sum = 0;
 
   // Sum header
@@ -355,11 +385,11 @@ FlipDot.prototype.send = function(data, callback) {
   
     // send complete, pop next data from queue and start task if queue exists
     if (this._queue.length > 0) {
-      this.packet.data = this._queue.shift();
       if (this.reTask === null) {
         this._busy = true;
         this.reTask = setInterval( function() {
           if (this._queue.length > 0) {
+            this.packet.data = this._queue.shift();
             this.send()
           } else {
             clearInterval(this.reTask);
