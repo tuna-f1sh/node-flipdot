@@ -1,18 +1,38 @@
 var FlipDot = require('../flipdot.js');
 
-// const SerialPort = require('serialport/test');
-// const MockBinding = SerialPort.Binding;
+const SerialPort = require('serialport/test');
+const MockBinding = SerialPort.Binding;
 
-// MockBinding.createPort('/dev/ROBOT', { echo: true });
-var flippy = new FlipDot('/dev/tty.wchusbserial1420',5,7,56);
+MockBinding.createPort('/dev/ROBOT', { echo: true });
+var flippy = new FlipDot('/dev/ROBOT',5,7,56);
 
-frames = [
-  "I think",
-  "they got",
-  "the front",
-  "and rear",
-  "mixed up!!!!!!!!"
+// var flippy = new FlipDot('/dev/tty.wchusbserial1420',5,7,56);
+
+var lines = [
+  'Lots',
+  'of.....',
+  'ascii',
+  'fonts!',
+  '1337 :D',
 ];
+
+var fonts = [
+  'Colossal',
+  'Banner3',
+  '3x5',
+  'Block',
+  'Banner',
+];
+
+var invert = [
+  false,
+  true,
+  false,
+  true,
+  false,
+];
+
+var i = -1;
 
 flippy.on("error", function(err) {
   console.log(err);
@@ -21,13 +41,19 @@ flippy.on("error", function(err) {
 flippy.once("open", function() {
   flippy.fill(0xFF);
   
-  var x = -1;
-  var task = setInterval( function() {
-    if (++x < frames.length) {
-      flippy.writeText(frames[x]);
-      flippy.send();
-    } else {
-      clearInterval(task);
-    }
-  }, 1000);
+  flippy.writeParagraph('Hanover\nFlipDot\nDisplay\nRS485\nDriver\n')
+
+  flippy.once('free', function () {
+    var interval = setInterval( function () {
+      if (++i < lines.length) {
+        flippy.writeText(lines[i], { font: fonts[i] },undefined, invert[i])
+        flippy.send();
+      } else {
+        clearInterval(interval);
+        flippy.writeText('JBR Engineering 2017', { font: '3x5', horizontalLayout: 'squash'} )
+        flippy.refresh = 600;
+        flippy.send();
+      }
+    }, 1000);
+  });
 });

@@ -2,7 +2,7 @@
   "name": "flipdot-display",
   "version": "1.0.0",
   "description": "RS485 driver for Hanover Flipdot Displays",
-  "keywords" : [
+  "keywords": [
     "flipdot",
     "hanover",
     "rs485"
@@ -28,5 +28,8 @@
   "bin": {
     "flipdot": "./bin/term.js",
     "flipdot-clock": "./bin/clock.js"
+  },
+  "devDependencies": {
+    "jsdoc-to-markdown": "^3.0.0"
   }
 }

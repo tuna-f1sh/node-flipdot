@@ -1,7 +1,7 @@
 /*
 //  GPL 3.0 License
 
-//  Copyright (c) 2016 John Whittington www.jbrengineering.co.uk
+//  Copyright (c) 2017 John Whittington www.jbrengineering.co.uk
 
 //  This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
@@ -24,8 +24,19 @@ var SerialPort = require('serialport');
 
 // Modules
 var figlet = require('figlet');
+// Debug
 var debug = require('debug')('flipdot')
 var asciiDebug = require('debug')('ascii')
+
+/**
+ * @class FlipDot is a Hanover FlipDot display connected via USB RS485
+ * @augments EventEmitter.
+ * @param {string} port Serial port of RS485.
+ * @param {int} addr Address of FlipDot display, set with pot internal to display.
+ * @param {int} rows Number of rows on display.
+ * @param {int} columns Number of columns on display.
+ * @param {function} callback Function to call when port is open.
+ */
 
 function FlipDot(port, addr, rows, columns, callback) {
   if (typeof port === "function" || typeof port === "undefined") {
@@ -58,7 +69,7 @@ function FlipDot(port, addr, rows, columns, callback) {
   this.ldata = (this.columns * this.col_bytes * 2);
   this.res = this.byteToAscii(this.data & 0xFF); // resolution in Hanover format for header
   this.last_sent = [];
-  this.refresh = 500;
+  this.refresh = 600;
   this.reTask = null;
 
   // packet on display
@@ -123,10 +134,20 @@ FlipDot.prototype = Object.create(Emitter.prototype, {
   },
 });
 
+/**
+ * Write data to the serial object.
+ * @param {buffer} data Binary data.
+ */
+
 FlipDot.prototype.write = function(data) {
   debug("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
   this.serial.write(data);
 };
+
+/**
+ * Write to serial object and wait to drain.
+ * @param {buffer} data Binary data.
+ */
 
 FlipDot.prototype.writeDrain = function(data, callback) {
   debug("Writing serial data, size: " + data.length, "B : " + data.toString('hex'));
@@ -134,6 +155,14 @@ FlipDot.prototype.writeDrain = function(data, callback) {
     this.serial.drain(callback);
   }.bind(this));
 };
+
+/**
+ * Return matrix (2d array), default size of display (matrix[rows][columns])
+ * @param {int} rows Number of rows (default size of display).
+ * @param {int} col Number of columns (default size of display).
+ * @param {int} fill Value to initialise array.
+ * @return {matrix} 2d array [rows][col].
+ */
 
 FlipDot.prototype.matrix = function(row = this.rows, col = this.columns, fill = 0x00) {
   if (row < this.rows) row = this.rows
@@ -146,6 +175,12 @@ FlipDot.prototype.matrix = function(row = this.rows, col = this.columns, fill = 
 
   return x;
 }
+
+/**
+ * Convert matrix to array of bytes, bytes constructed from rows in each column.
+ * @param {matrix} matrix 2d array returned from `this.matrix`.
+ * @return {array} Array of column bytes.
+ */
 
 FlipDot.prototype.matrixToBytes = function(matrix) {
   var x = new Array(matrix[0].length * this.col_bytes).fill(0);
@@ -164,6 +199,13 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
   return x;
 }
 
+/**
+ * Load matrix, ready to send on next call.
+ * @param {matrix} matrix 2d array returned from `this.matrix`.
+ * @param {bool} load Whether to load the data or just return encoded.
+ * @return {array} Array of column bytes.
+ */
+
 FlipDot.prototype.writeMatrix = function(matrix, load = true) {
   var data = this.matrixToBytes(matrix)
 
@@ -172,6 +214,12 @@ FlipDot.prototype.writeMatrix = function(matrix, load = true) {
 
   return data;
 }
+
+/**
+ * Queue data frames to display in order.
+ * @param {array} frames Array of display data in byte format.
+ * @param {int} refresh Refresh rate of frames (ms).
+ */
 
 FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
   if (frames.length > 0) {
@@ -184,6 +232,16 @@ FlipDot.prototype.writeFrames = function(frames, refresh = this.refresh) {
     }
   }
 }
+
+/**
+ * Write text string to display in ascii art format, using _figlet_ module.
+ * @param {string} text Text to display.
+ * @param {object} fontOpt figlet options { font: , horizontalLayout: , verticalLayout: }.
+ * @param {array} offset Text offset cordinates [x,y].
+ * @param {bool} invert Invert text.
+ * @param {bool} load Whether to load for next send or just return encoded data.
+ * @return {array} Array of column bytes.
+ */
 
 FlipDot.prototype.writeText = function(text, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, load = true) {
   var aart = figlet.textSync(text, fontOpt);
@@ -212,16 +270,51 @@ FlipDot.prototype.writeText = function(text, fontOpt = { font:'Banner', horizont
   return data;
 }
 
+/**
+ * Write lines of text to display in ascii art format, using _figlet_ module. Same inputs as `writeText` but sends each line as a frame.
+ * @param {string} paragraph Lines of text to display; '\n' line break.
+ * @param {object} fontOpt figlet options { font: , horizontalLayout: , verticalLayout: }.
+ * @param {array} offset Text offset cordinates [x,y].
+ * @param {bool} invert Invert text.
+ * @param {int} refresh Period to display each frame.
+ */
+
+FlipDot.prototype.writeParagraph = function(paragraph, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, refresh = 1000) {
+  var lines = paragraph.split('\n');
+  var frames = [];
+
+  lines.forEach(function(line) {
+    frames.push(this.writeText(line,fontOpt,offset,invert,false));
+  }.bind(this));
+
+  this.writeFrames(frames,refresh);
+}
+
+/**
+ * Clear display (write 0x00 and stop queue).
+ */
+
 FlipDot.prototype.clear = function() {
   this._stopQueue();
 
   this.fill(0x00);
 }
 
+/**
+ * Fill display with value.
+ * @param {int} value hex value to fill.
+ */
+
 FlipDot.prototype.fill = function(value) {
   var x = new Array(this.columns).fill(value);
   this.send(x);
 }
+
+/**
+ * Convert Hanover two ascii charactor format hex value to byte.
+ * @param {array} chars Chars representing hex value, eg: ['0','F'].
+ * @return {int} Byte.
+ */
 
 FlipDot.prototype.asciiToByte = function(chars) {
   var b1 = String.fromCharCode(chars[1]);
@@ -231,6 +324,12 @@ FlipDot.prototype.asciiToByte = function(chars) {
 
   return parseInt(b2,16);
 }
+
+/**
+ * Convert byte to two ascii chars representing hex value.
+ * @param {int} byte Byte to convert.
+ * @return {array} Two ascii chars of hex value.
+ */
 
 FlipDot.prototype.byteToAscii = function(byte) {
   var asciichars = new Buffer(2);
@@ -254,6 +353,15 @@ FlipDot.prototype.byteToAscii = function(byte) {
   return asciichars;
 };
 
+/**
+ * Encode data for Hanover display; the display reads two ascii chars per byte, representing the visual hex representation of the byte - this means the data packet doubles in size.
+ * @example
+ * // returns ['0', '5']
+ * FlipDot.encode(0x05);
+ * @param {array} matrix Array of column bytes.
+ * @return {array} Hanover encoded data (two ascii chars representing visual form of each byte).
+ */
+
 FlipDot.prototype.encode = function(matrix) {
   var data = [];
 
@@ -270,6 +378,15 @@ FlipDot.prototype.encode = function(matrix) {
 
   return data;
 };
+
+/**
+ * Decode Hanover display data (two ascii chars per byte) back to bytes.
+ * @example
+ * \\ returns 0x0F
+ * FlipDot.asciiToBye(['0', 'F']);
+ * @param {array} data Hanover display data of ascii chars representing visual form of hex byte.
+ * @return {array} Bytes (will be half size of passed).
+ */
 
 FlipDot.prototype.decode = function(data = this.packet.data) {
   var hex_data = [];
@@ -320,6 +437,12 @@ FlipDot.prototype._stopQueue = function() {
   this._queue = [];
 }
 
+/**
+ * Load or queue data for next call to `send`. Does the encoding of data.
+ * @param {array} data Array of column bytes.
+ * @param {bool} queue Whether to queue or write data.
+ */
+
 FlipDot.prototype.load = function(data = 0x00, queue = false) {
   // encode it for Hanover display
   data = this.encode(data);
@@ -345,6 +468,12 @@ FlipDot.prototype.load = function(data = 0x00, queue = false) {
   if (queue) this._queue.push(next); else this.packet.data = next;
 
 }
+
+/**
+ * Send data to display over RS485 and load next from queue if available. This should be called without parameters after a `write` or `load` function. Will start task to empty queue if queued data, which will pop frames at `this.refresh` period.
+ * @param {data} data Optional: data to send.
+ * @param {function} callback Function to call once data is sent and drained.
+ */
 
 FlipDot.prototype.send = function(data, callback) {
 
@@ -421,4 +550,12 @@ FlipDot.prototype.close = function(callback) {
   this.serial.close(callback);
 };
 
+/**
+ * @module FlipDot
+ * @typicalname flippy
+ */
+
+/**
+ * The FlipDot display class.
+ */
 module.exports = FlipDot;
