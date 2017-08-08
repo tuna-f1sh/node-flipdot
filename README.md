@@ -60,8 +60,9 @@ flippy.once("open", function() {
 * [ks156 Python driver](https://github.com/ks156/Hanover_Flipdot) - Explained
   the _bizare_ protocol expected by the Hanover display and saved a lot of
   work!
-
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
+* [@j_whittington](https://twitter.com/j_whittington) - [JBR
+  Engineering](https://jbrengineering.com) - 2017
+* [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 # JSDoc Class
 
