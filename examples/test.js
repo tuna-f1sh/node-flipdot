@@ -1,5 +1,8 @@
 var FlipDot = require('../flipdot.js');
 
+/* MOCK BINDING FOR TEST 
+ * comment out and uncomment physical port below to use with device 
+ */
 const SerialPort = require('serialport/test');
 const MockBinding = SerialPort.Binding;
 
@@ -41,7 +44,7 @@ flippy.on("error", function(err) {
 flippy.once("open", function() {
   flippy.fill(0xFF);
   
-  flippy.writeParagraph('Hanover\nFlipDot\nDisplay\nRS485\nDriver\n')
+  flippy.writeParagraph('Hanover\nFlipDot\nDisplay\nRS485\nDriver\nWith\nScrolling.')
 
   flippy.once('free', function () {
     var interval = setInterval( function () {

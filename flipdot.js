@@ -36,6 +36,8 @@ var asciiDebug = require('debug')('ascii')
  * @param {int} rows Number of rows on display.
  * @param {int} columns Number of columns on display.
  * @param {function} callback Function to call when port is open.
+ * @emits FlipDot#sent All data sent
+ * @emits FlipDot#free Queue'd data emptied
  */
 
 function FlipDot(port, addr, rows, columns, callback) {
@@ -88,8 +90,6 @@ function FlipDot(port, addr, rows, columns, callback) {
   this._busy = false;
 
   this.error_msg = this.writeText('error',undefined,undefined,false,false);
-
-  // var flipdot = this;
 
   this.serial = new SerialPort(port, defaults.portSettings, function(err) {
     if (err) {
@@ -279,7 +279,7 @@ FlipDot.prototype.writeText = function(text, fontOpt = { font:'Banner', horizont
  * @param {int} refresh Period to display each frame.
  */
 
-FlipDot.prototype.writeParagraph = function(paragraph, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, refresh = 1000) {
+FlipDot.prototype.writeParagraph = function(paragraph, fontOpt = { font:'Banner', horizontalLayout: 'default', verticalLayout: 'default' }, offset = [0,0], invert = false, refresh = this.refresh) {
   var lines = paragraph.split('\n');
   var frames = [];
 
@@ -382,7 +382,7 @@ FlipDot.prototype.encode = function(matrix) {
 /**
  * Decode Hanover display data (two ascii chars per byte) back to bytes.
  * @example
- * \\ returns 0x0F
+ * // returns 0x0F
  * FlipDot.asciiToBye(['0', 'F']);
  * @param {array} data Hanover display data of ascii chars representing visual form of hex byte.
  * @return {array} Bytes (will be half size of passed).
@@ -471,6 +471,9 @@ FlipDot.prototype.load = function(data = 0x00, queue = false) {
 
 /**
  * Send data to display over RS485 and load next from queue if available. This should be called without parameters after a `write` or `load` function. Will start task to empty queue if queued data, which will pop frames at `this.refresh` period.
+ * @example
+ * FlipDot.writeText('Hello World');
+ * FlipDot.send();
  * @param {data} data Optional: data to send.
  * @param {function} callback Function to call once data is sent and drained.
  */
@@ -550,12 +553,5 @@ FlipDot.prototype.close = function(callback) {
   this.serial.close(callback);
 };
 
-/**
- * @module FlipDot
- * @typicalname flippy
- */
-
-/**
- * The FlipDot display class.
- */
+// export the class
 module.exports = FlipDot;
