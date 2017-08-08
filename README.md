@@ -4,11 +4,64 @@
 
 Node.js driver for the [Hanover Flip-Dot Display](http://dbiw.net/HanoverDisplays/Flip_Dot_Manual_vB.pdf). Designed to be used with [USB-RS485 dongle](https://www.ebay.co.uk/sch/i.html?_from=R40&_trksid=p5197.m570.l1313&_nkw=usb+rs485&_sacat=See-All-Categories).
 
+## Features
+
+* Figlet ascii art based text renderer, including font selection, offset and
+  inversion.
+* Automatic scrolling text.
+* Automatic queueing of data and frame management.
+* Matrix based data input (\[x\]\[y\]).
+
+## Methodology
+
+The Hanover Flip-Dot display expects ascii chars representing the hexadecimal
+bytes; bytes being every 8 rows of dots. For example, an eight row column:
+
+```
+. = 1 => 0xF5 => ['F', '5'] => [0x46, 0x35]
+| = 0
+. = 1
+| = 0
+. = 1
+. = 1
+. = 1
+. = 1
+```
+
+Along with a header (containing display resolution and address) and footer
+(containing CRC).
+
+My module is designed around a 2d array (or matrix) of rows and columns. One
+can create this using `FlipDot.matrix`. The matrix is then converted to an
+array of column bytes using `FlipDot.matrixToBytes`. This byte array can
+then be buffered for the next send (or queued if multiple frames are desired)
+using `FlipDot.load`. Finally, the buffered data is encoded, packaged and
+sent using `FlipDot.send`. 
+
+This process is largely automated in `FlipDot.writeText`,
+`FlipDot.writeFrames`, `FlipDot.writeParagraph` and `FlipDot.writeMatrix`,
+with only a call to `FlipDot.send` required.
+
+See the 'examples/' folder for code usage but broadly:
+
+```javascript
+const FlipDot = require('node-flipdot');
+
+const flippy = new FlipDot('/dev/ttyUSB0',5,7,56);
+
+flippy.once("open", function() {
+  flippy.writeText('Hello World');
+  flippy.send();
+});
+```
+
 ## Acknowledgements
 
 * [ks156 Python driver](https://github.com/ks156/Hanover_Flipdot) - Explained
   the _bizare_ protocol expected by the Hanover display and saved a lot of
   work!
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 # JSDoc Class
 
