@@ -1,6 +1,6 @@
 # Hanover FlipDot Display RS485 Driver
 
-![Demo gifv](http://i.imgur.com/Mn0MCZL.gif)
+![Demo gifv](http://i.imgur.com/wRxU6VV.gif)
 
 Node.js driver for the [Hanover Flip-Dot Display](http://dbiw.net/HanoverDisplays/Flip_Dot_Manual_vB.pdf). Designed to be used with [USB-RS485 dongle](https://www.ebay.co.uk/sch/i.html?_from=R40&_trksid=p5197.m570.l1313&_nkw=usb+rs485&_sacat=See-All-Categories).
 
