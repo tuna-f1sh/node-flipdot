@@ -200,6 +200,29 @@ FlipDot.prototype.matrixToBytes = function(matrix) {
 }
 
 /**
+ * Convert hex display data (output from `decode`) to matrix (2d array)
+ * @param {array} Display hex data output from `this.decode`.
+ * @return {matrix} 2d array of display data [rows][col].
+ */
+
+FlipDot.prototype.dataToMatrix = function(hex_data = this.decode(this.packet.data)) {
+  var matrix = this.matrix();
+
+  for (var j = 0; j < this.columns; j++) {
+    // walk bytes in column
+    for (var b = 0; b < this.col_bytes; b++) {
+      // walk bits in byte constructing hex value
+      for (var i = 8*b; i < (this.rows * (b+1)); i++) {
+        var bit = (hex_data[j] >> i) & 0x01;
+        matrix[i][j] = bit;
+      }
+    }
+  }
+
+  return matrix;
+}
+
+/**
  * Load matrix, ready to send on next call.
  * @param {matrix} matrix 2d array returned from `this.matrix`.
  * @param {bool} load Whether to load the data or just return encoded.
