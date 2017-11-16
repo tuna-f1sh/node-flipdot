@@ -8,6 +8,8 @@ For a usage demo, see the [web app
 controller](https://github.com/tuna-f1sh/flippy-flipdot-web) I made for my
 display to show at a local art trail.
 
+See my blog post and YouTube video for a technical run down: https://engineer.john-whittington.co.uk/2017/11/adventures-flippy-flip-dot-display/
+
 ## Features
 
 * Figlet ascii art based text renderer, including font selection, offset and
@@ -15,6 +17,20 @@ display to show at a local art trail.
 * Automatic scrolling text.
 * Automatic queueing of data and frame management.
 * Matrix based data input (\[x\]\[y\]).
+
+## Installation & Usage
+
+As a module:
+```
+npm install flipdot-display # see below sections on integration
+```
+
+As a CLI application:
+```
+npm install -g flipdot-display
+flipdot --help # send text bin (args are optional)
+flipdot-clock --help # send clock bin (args are optional)
+```
 
 ## Methodology
 
