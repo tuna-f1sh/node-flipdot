@@ -32,6 +32,11 @@ flipdot --help # send text bin (args are optional)
 flipdot-clock --help # send clock bin (args are optional)
 ```
 
+### Important Notes
+
+* The **address** of your display (defualt 0x05 - arbitary but matches mine) must be correct otherise the display will not display the data. Find the correct address through trial and error or by taking the back off and reading the potentiometer (RHS) position
+* The **number of columns and rows** (default 56x7) must be correct for your display otherwise the message length will be incorrect - the Hanover display may not acknowledge or display the incorrect message length.
+
 ## Methodology
 
 The Hanover Flip-Dot display expects ascii chars representing the hexadecimal
