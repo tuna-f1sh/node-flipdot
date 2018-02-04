@@ -4,11 +4,12 @@
 
 Node.js driver for the [Hanover Flip-Dot Display](http://dbiw.net/HanoverDisplays/Flip_Dot_Manual_vB.pdf). Designed to be used with [USB-RS485 dongle](https://www.ebay.co.uk/sch/i.html?_from=R40&_trksid=p5197.m570.l1313&_nkw=usb+rs485&_sacat=See-All-Categories).
 
-For a usage demo, see the [web app
-controller](https://github.com/tuna-f1sh/flippy-flipdot-web) I made for my
-display to show at a local art trail.
+For a usage demo, see the [emulated web app
+controller](http://flipdot.jbrengineering.co.uk) I made for my
+display to show at a local art trail. [Source
+link](https://github.com/tuna-f1sh/flippy-flipdot-web).
 
-See my blog post and YouTube video for a technical run down: https://engineer.john-whittington.co.uk/2017/11/adventures-flippy-flip-dot-display/
+See my blog post and YouTube video for a technical run down: [https://engineer.john-whittington.co.uk/2017/11/adventures-flippy-flip-dot-display/](https://engineer.john-whittington.co.uk/2017/11/adventures-flippy-flip-dot-display/)
 
 ## Features
 
