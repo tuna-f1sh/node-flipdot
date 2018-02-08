@@ -19,17 +19,17 @@
   "author": "John Whittington <node@jbrengineering.co.uk> (http://jbrengineering.co.uk)",
   "license": "GPL-3.0",
   "dependencies": {
-    "args": "^3.0.4",
-    "dateformat": "^2.0.0",
-    "debug": "^2.6.8",
+    "args": "^3.0.8",
+    "dateformat": "^2.2.0",
+    "debug": "^2.6.9",
     "figlet": "^1.2.0",
-    "serialport": "^5.0.0-beta8"
+    "serialport": "^5.0.0"
   },
   "bin": {
     "flipdot": "./bin/term.js",
     "flipdot-clock": "./bin/clock.js"
   },
   "devDependencies": {
-    "jsdoc-to-markdown": "^3.0.0"
+    "jsdoc-to-markdown": "^3.0.4"
   }
 }
