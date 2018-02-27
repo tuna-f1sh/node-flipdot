@@ -81,13 +81,13 @@ function FlipDot(port, addr, rows, columns, callback) {
     footer : [this.fchar, 0x00, 0x00],
   };
 
-  // initialise the data buffer to text 'null'
-  this.writeText('null');
-
   // data stream sent to display
   this._buffer = Buffer.alloc(this.packet.header.length + this.ldata + this.packet.footer.length);
   this._queue = [];
   this._busy = false;
+
+  // initialise the data buffer to text 'null'
+  this.writeText('null');
 
   this.error_msg = this.writeText('error',undefined,undefined,false,false);
 
