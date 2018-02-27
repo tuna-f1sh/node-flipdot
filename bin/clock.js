@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var FlipDot = require('../flipdot.js');
 var dateFormat = require('dateformat');
 var args = require('args')
