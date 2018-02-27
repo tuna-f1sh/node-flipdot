@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var FlipDot = require('../flipdot.js')
 var args = require('args')
 
