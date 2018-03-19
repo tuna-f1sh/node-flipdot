@@ -76,7 +76,7 @@ function FlipDot(port, addr, rows, columns, callback) {
 
   // packet on display
   this.packet = {
-    header : [this.hchar, 0x31, 0x35, this.res[0], this.res[1]],
+    header : [this.hchar, 0x31, this.byteToAscii(this.addr)[1], this.res[0], this.res[1]],
     data : [],
     footer : [this.fchar, 0x00, 0x00],
   };
