@@ -22,7 +22,6 @@ flippy.on("error", function(err) {
 });
 
 flippy.once("open", function() {
-  flippy.fill(0xFF);
   flippy.writeText(flags.string, {font: flags.font}, [flags.xaxis,flags.yaxis], flags.invert)
   console.log('Sending: ' + flags.string)
   flippy.send(() => {
