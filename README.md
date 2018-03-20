@@ -33,6 +33,10 @@ flipdot --help # send text bin (args are optional)
 flipdot-clock --help # send clock bin (args are optional)
 ```
 
+### Debug
+
+`DEBUG=* node examples/test.js`
+
 ### Important Notes
 
 * The **address** of your display (defualt 0x05 - arbitary but matches mine) must be correct otherise the display will not display the data. Find the correct address through trial and error or by taking the back off and reading the potentiometer (RHS) position
