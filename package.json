@@ -30,6 +30,6 @@
     "flipdot-clock": "./bin/clock.js"
   },
   "devDependencies": {
-    "jsdoc-to-markdown": "^3.0.4"
+    "jsdoc-to-markdown": "^7.1.1"
   }
 }
