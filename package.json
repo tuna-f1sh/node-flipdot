@@ -23,7 +23,7 @@
     "dateformat": "^2.2.0",
     "debug": "^2.6.9",
     "figlet": "^1.2.0",
-    "serialport": "^5.0.0"
+    "serialport": "^8.0.0"
   },
   "bin": {
     "flipdot": "./bin/term.js",
