@@ -75,11 +75,11 @@ with only a call to `FlipDot.send` required.
 See the 'examples/' folder for code usage but broadly:
 
 ```javascript
-const FlipDot = require('node-flipdot');
+const FlipDot = require('flipdot-display');
 
 const flippy = new FlipDot('/dev/ttyUSB0',5,7,56);
 
-flippy.once("open", function() {
+flippy.once('open', function() {
   flippy.writeText('Hello World');
   flippy.send();
 });
